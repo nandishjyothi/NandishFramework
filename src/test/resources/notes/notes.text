@@ -1,0 +1,23 @@
+POM: it is a design pattern 
+Data Driven:
+Libs: Generic functions
+TDD
+
+-> Hybrid framework with POM design pattern (SRP)
+
+POM: Martin folwer implemented POM
+page:
+  - For each and every page in the mobile app or web we need to create separate page java class
+  - Never use assertions in page class
+  - Page actions need to provide the page behavoiur  
+  - Page locators(By) should be private and will be accessed via public page actions.
+
+Test:
+  - Have to use a test client: TestNG/Junit/pytest/NUnit/Jasmine/Mocha
+  - assertions should be written in Test class
+  - never use driver apis in test class
+
+
+
+
+
