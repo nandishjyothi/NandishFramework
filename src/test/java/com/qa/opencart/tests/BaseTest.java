@@ -39,7 +39,7 @@ public class BaseTest {
 	
 	@AfterTest
 	public void tesrDown() {
-		//driver.quit();
+		driver.quit();
 		
 	}
 
