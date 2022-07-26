@@ -31,7 +31,7 @@ public class LoginPage {
 	private By openCartregisterLink = By.linkText("Register");
 	
 	//4. page actions
-	@Step("getting login page title")
+	@Step("getting login page title value")
 	public String getLoginPageTitle() {
 		return eleUtil.doGetTitleWithFraction(Constants.LOGIN_PAGE_TITLE, Constants.DEFAULT_TIME_OUT);
 	}
