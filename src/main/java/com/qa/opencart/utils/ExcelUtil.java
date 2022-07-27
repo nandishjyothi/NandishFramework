@@ -42,7 +42,7 @@ public class ExcelUtil {
 			try {
 				switch(excelName.toLowerCase()) {
 				case "qa":
-					System.out.println("From QA excel");
+					System.out.println("******************************From QA excel***************************");
 					ip = new FileInputStream("./src/test/resources/testdata/QAOpenCartAppTestData.xlsx");
 					book = WorkbookFactory.create(ip);
 					sheet = book.getSheet(sheetName);
