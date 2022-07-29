@@ -13,10 +13,15 @@ import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.safari.SafariDriver;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
+import io.github.bonigarcia.wdm.managers.ChromeDriverManager;
 
 public class DriverFactory {
 
@@ -37,22 +42,40 @@ public class DriverFactory {
 	public WebDriver intialize_driver(Properties prop) {
 
 		String browserName = prop.getProperty("browser").trim();
-		System.out.println("Browser name is : " + browserName);
+		String browserVersion = prop.getProperty("browserversion").trim();
+		System.out.println("Browser name is : " + browserName+"Browser version is : "+browserVersion);
 
 		highlight = prop.getProperty("highlight");
 		optionsManager = new OptionsManager(prop);
 
 		if (browserName.equals("chrome")) {
 			WebDriverManager.chromedriver().setup();
-			// driver = new ChromeDriver(optionsManager.getChromeOptions());
-			// Thread local driver
-			tlDriver.set(new ChromeDriver(optionsManager.getChromeOptions()));
+
+			if (Boolean.parseBoolean(prop.getProperty("remote"))) {
+				// run test cases on remote
+				init_remoteDriver("chrome",browserVersion);
+
+			} else {
+				// Run test cases on local
+				// driver = new ChromeDriver(optionsManager.getChromeOptions());
+				// Thread local driver
+				tlDriver.set(new ChromeDriver(optionsManager.getChromeOptions()));
+			}
+
 		}
 
 		else if (browserName.equals("firefox")) {
 			WebDriverManager.firefoxdriver().setup();
-			// driver = new FirefoxDriver(optionsManager.getFirefoxOptions());
-			tlDriver.set(new FirefoxDriver(optionsManager.getFirefoxOptions()));
+
+			if (Boolean.parseBoolean(prop.getProperty("remote"))) {
+				// run test cases on remote
+				init_remoteDriver("firefox",browserVersion);
+
+			} else {
+				// driver = new FirefoxDriver(optionsManager.getFirefoxOptions());
+				tlDriver.set(new FirefoxDriver(optionsManager.getFirefoxOptions()));
+			}
+
 		}
 
 		else if (browserName.equals("safari")) {
@@ -66,8 +89,8 @@ public class DriverFactory {
 
 		getDriver().manage().window().fullscreen();
 		getDriver().manage().deleteAllCookies();
-		//getDriver().get(prop.getProperty("url"));
-		//openUrl(prop.getProperty("url"));
+		// getDriver().get(prop.getProperty("url"));
+		// openUrl(prop.getProperty("url"));
 		URL url;
 		try {
 			url = new URL(prop.getProperty("url"));
@@ -75,10 +98,52 @@ public class DriverFactory {
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		}
-		
-	
 
 		return getDriver();
+
+	}
+
+	private void init_remoteDriver(String browser,String browserVersion) {
+
+		System.out.println("Running test on remote grid server: " + browser);
+		if (browser.equalsIgnoreCase("chrome")) {
+//			Selenium 3.x feature is desiredCapabilities 
+//			DesiredCapabilities cap = new DesiredCapabilities();
+//			cap.setBrowserName("chrome");
+//			cap.setCapability(ChromeOptions.CAPABILITY, optionsManager.getChromeOptions());
+			
+			//Selenium 4:
+			
+			DesiredCapabilities cap = new DesiredCapabilities();
+			cap.setCapability("browserName", "chrome");
+			cap.setCapability("browserVersion", browserVersion);
+			cap.setCapability("enableVNC", true);
+			cap.setCapability(ChromeOptions.CAPABILITY, optionsManager.getChromeOptions());
+			
+			
+			try {
+				tlDriver.set(new RemoteWebDriver(new URL(prop.getProperty("huburl")), cap));
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+			}
+		} else if (browser.equalsIgnoreCase("firefox")) {
+
+//			DesiredCapabilities cap = DesiredCapabilities.firefox();
+//			cap.setCapability(FirefoxOptions.FIREFOX_OPTIONS, optionsManager.getFirefoxOptions());
+			
+			DesiredCapabilities cap = new DesiredCapabilities();
+			cap.setCapability("browserName", "firefox");
+			cap.setCapability("browserVersion", browserVersion);
+			cap.setCapability("enableVNC", true);
+			cap.setCapability(FirefoxOptions.FIREFOX_OPTIONS, optionsManager.getFirefoxOptions());
+			
+			
+			try {
+				tlDriver.set(new RemoteWebDriver(new URL(prop.getProperty("huburl")), cap));
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+			}
+		}
 
 	}
 
@@ -96,7 +161,7 @@ public class DriverFactory {
 	 */
 	public Properties initialize_prop() {
 		prop = new Properties();
-		FileInputStream ip=null;
+		FileInputStream ip = null;
 
 		String envName = System.getProperty("env");// qa/dev/stage/uat
 
@@ -107,11 +172,10 @@ public class DriverFactory {
 				e.printStackTrace();
 			}
 
-		}
-		else {
-			System.out.println("Running on environment: "+envName);
+		} else {
+			System.out.println("Running on environment: " + envName);
 			try {
-				switch(envName.toLowerCase()) {
+				switch (envName.toLowerCase()) {
 				case "qa":
 					ip = new FileInputStream("./src/test/resources/config/qa.config.properties");
 					break;
@@ -128,31 +192,30 @@ public class DriverFactory {
 					System.out.println("Please pass the right environment...");
 					break;
 				}
-				
-			}
-			catch(FileNotFoundException e) {
+
+			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
 		}
 		try {
 			prop.load(ip);
-		}catch(IOException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		return prop;
 	}
-	
-	
+
 	/**
 	 * Take ScreenShot
-	 * @return 
+	 * 
+	 * @return
 	 */
 	public String getScreenshot() {
-		File src = ((TakesScreenshot)getDriver()).getScreenshotAs(OutputType.FILE);
-		String path = System.getProperty("user.dir")+"/screenshots/"+System.currentTimeMillis()+".png";
+		File src = ((TakesScreenshot) getDriver()).getScreenshotAs(OutputType.FILE);
+		String path = System.getProperty("user.dir") + "/screenshots/" + System.currentTimeMillis() + ".png";
 		File destination = new File(path);
-		
+
 		try {
 			FileUtils.copyFile(src, destination);
 		} catch (IOException e) {
@@ -161,61 +224,59 @@ public class DriverFactory {
 		}
 		return path;
 	}
-	
+
 	/**
-	 * launch url method 
+	 * launch url method
+	 * 
 	 * @param url
 	 */
 	public void openUrl(String url) {
 		try {
-		if(url == null) {
-			throw new Exception("url is null");
+			if (url == null) {
+				throw new Exception("url is null");
+			}
+		} catch (Exception e) {
+
 		}
-	}catch (Exception e) {
-		
-	}
 		getDriver().get(url);
 	}
-	
+
 	public void openUrl(URL url) {
 		try {
-		if(url == null) {
-			throw new Exception("url is null");
+			if (url == null) {
+				throw new Exception("url is null");
+			}
+		} catch (Exception e) {
+
 		}
-	}catch (Exception e) {
-		
-	}
 		getDriver().navigate().to(url);
 	}
-	
+
 	public void openUrl(String baseUrl, String path) {
 		try {
-		if(baseUrl == null) {
-			throw new Exception("url is null");
+			if (baseUrl == null) {
+				throw new Exception("url is null");
+			}
+		} catch (Exception e) {
+
 		}
-	}catch (Exception e) {
-		
+		// baseUrl: //http://amazon.com
+		// path: /accpage/users.html
+		getDriver().get(baseUrl + "/" + path);
 	}
-		//baseUrl: //http://amazon.com
-		//path: /accpage/users.html
-		getDriver().get(baseUrl+"/"+path);
-	}
-	
+
 	public void openUrl(String baseUrl, String path, String queryParam) {
 		try {
-		if(baseUrl == null) {
-			throw new Exception("url is null");
+			if (baseUrl == null) {
+				throw new Exception("url is null");
+			}
+		} catch (Exception e) {
+
 		}
-	}catch (Exception e) {
-		
+		// baseUrl: //http://amazon.com
+		// path: /accpage/users.html
+		// queryParam: ?fn=nandish&ln="ju"
+		getDriver().get(baseUrl + "/" + path + "?" + queryParam);
 	}
-		//baseUrl: //http://amazon.com
-		//path: /accpage/users.html
-		//queryParam: ?fn=nandish&ln="ju" 
-		getDriver().get(baseUrl+"/"+path+"?"+queryParam);
-	}
-	
-	
-	
 
 }

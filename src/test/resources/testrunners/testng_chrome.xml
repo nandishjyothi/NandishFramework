@@ -29,15 +29,6 @@
 		</classes>
 	</test>
 
-	<test name="Open Cart Login Page Test - ff -83">
-		<parameter name="browser" value="firefox" />
-		<parameter name="browserversion" value="83" />
-
-		<classes>
-			<class name="com.qa.opencart.tests.LoginPageTest" />
-		</classes>
-	</test>
-
 
 	<test name="Open Cart Accounts Page Test - ch - 90">
 		<parameter name="browser" value="chrome" />
